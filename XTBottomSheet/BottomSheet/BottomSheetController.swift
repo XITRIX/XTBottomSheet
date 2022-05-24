@@ -123,9 +123,8 @@ private extension BottomSheetController {
 
         dimmView.alpha = 1
         heightConstraint.isActive = false
-//        let limit = view.frame.height - view.safeAreaInsets.top - 44
-//        heightConstraint.constant = min(getContentHeight(), limit)
-        heightConstraint.constant = getContentHeight()
+        heightConstraint.constant = min(getContentHeight(), heightLimit)
+//        heightConstraint.constant = getContentHeight()
         heightConstraint.isActive = true
         view.layoutIfNeeded()
     }
@@ -139,8 +138,7 @@ private extension BottomSheetController {
     }
 
     func getContentHeight() -> CGFloat {
-        view.setNeedsLayout()
-        view.layoutIfNeeded()
+        bottomSheet.view.layoutIfNeeded()
         return bottomSheet.containerView.frame.height
     }
 
@@ -163,6 +161,9 @@ private extension BottomSheetController {
                 let l = logC(-translation.y / 30 + 1, base: 2) * 4
                 heightConstraint.constant = max(startConst + l, 0)
             }
+
+            let percent = min(heightConstraint.constant / getContentHeight(), 1)
+            dimmView.alpha = percent
         case .ended, .failed:
             let velocity = pan.velocity(in: view)
             let projection = startConst - translation.y - project(initialVelocity: velocity.y, decelerationRate: UIScrollView.DecelerationRate.fast.rawValue)
@@ -191,6 +192,10 @@ private extension BottomSheetController {
 }
 
 extension BottomSheetController: BottomSheetContainerDelegate {
+    var heightLimit: CGFloat {
+        view.frame.height - view.safeAreaInsets.top - 44
+    }
+
     func scrollViewContentSizeChanged() {
         guard !dragging else { return }
         baseAnimation(moveContainerTop)

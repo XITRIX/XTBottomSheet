@@ -8,6 +8,7 @@
 import UIKit
 
 protocol BottomSheetContainerDelegate: AnyObject {
+    var heightLimit: CGFloat { get }
     func scrollViewContentSizeChanged()
 }
 
@@ -80,10 +81,10 @@ class BottomSheetContainer: UIViewController {
 
     func updateScrollHeight() {
         guard let scrollView = scrollView,
-              let parent = parent
+              let delegate = delegate
         else { return }
 
-        let limit = parent.view.frame.height - parent.view.safeAreaInsets.top - 44
+        let limit = delegate.heightLimit
         let safeArea = scrollView.safeAreaInsets
         let scrollSize = scrollView.contentSize.height + scrollView.contentInset.top + scrollView.contentInset.bottom + safeArea.top + safeArea.bottom
         scrollHeightConstraint?.constant = min(scrollSize, limit)
