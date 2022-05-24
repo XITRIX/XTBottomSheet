@@ -38,6 +38,7 @@ class BottomSheetContainer: UIViewController {
         super.viewDidLoad()
         additionalSafeAreaInsets.top += 20
 
+        // Setup root controller
         addChild(rootViewController)
         containerView.addSubview(rootViewController.view)
         rootViewController.didMove(toParent: self)

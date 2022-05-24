@@ -10,7 +10,3 @@ import UIKit
 func project(initialVelocity: CGFloat, decelerationRate: CGFloat) -> CGFloat {
   return (initialVelocity / 1000) * decelerationRate / (1 - decelerationRate)
 }
-
-func logC(_ val: CGFloat, base: CGFloat) -> CGFloat {
-    log(val) / log(base)
-}
