@@ -17,6 +17,7 @@ class BottomSheetController: UIViewController {
     var animating: Bool = false
     var heightObserver: NSKeyValueObservation?
     var startPanGestureHeightConstant: CGFloat = 0
+    var enableMagnification = false
 
     // MARK: - Init
     public init(rootViewController: UIViewController) {
@@ -145,7 +146,7 @@ private extension BottomSheetController {
     }
 
     func getContentHeight() -> CGFloat {
-        bottomSheet.view.layoutIfNeeded()
+        view.layoutIfNeeded()
         return bottomSheet.containerView.frame.height
     }
 
@@ -203,9 +204,11 @@ private extension BottomSheetController {
 // MARK: - Parent magnification
 private extension BottomSheetController {
     func magnifyParent(progress: CGFloat) {
+        guard enableMagnification else { return }
         guard getContentHeight() >= heightLimit
         else {
             dimmView.transform = CGAffineTransform.identity
+            dimmView.layer.cornerRadius = UIScreen.main.displayCornerRadius
             presentingViewController?.view.transform = CGAffineTransform.identity
             presentingViewController?.view.layer.cornerRadius = UIScreen.main.displayCornerRadius
             return
@@ -225,9 +228,10 @@ private extension BottomSheetController {
     }
 
     func removeMagnification() {
+        dimmView.layer.cornerRadius = 0
         dimmView.transform = CGAffineTransform.identity
-        presentingViewController?.view.transform = CGAffineTransform.identity
         presentingViewController?.view.layer.cornerRadius = 0
+        presentingViewController?.view.transform = CGAffineTransform.identity
     }
 }
 
