@@ -16,7 +16,6 @@ class BottomSheetController: UIViewController {
     var dragging: Bool = false
     var animating: Bool = false
     var heightObserver: NSKeyValueObservation?
-    var startPanGestureHeightConstant: CGFloat = 0
     var enableMagnification = false
 
     // MARK: - Init
@@ -62,7 +61,10 @@ class BottomSheetController: UIViewController {
 
         // Setup Gesture recognizers
         dimmView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(dismissSelf)))
-        bottomSheet.view.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(panGesture(_:))))
+        let pan = UIPanGestureRecognizer(target: self, action: #selector(panGesture(_:)))
+        pan.allowedScrollTypesMask = .continuous
+        pan.delegate = self
+        bottomSheet.view.addGestureRecognizer(pan)
 
         // Setup content size observer
         heightObserver = bottomSheet.containerView.observe(\.bounds, options: [.old, .new], changeHandler: { [unowned self] _, _ in
@@ -146,8 +148,7 @@ private extension BottomSheetController {
     }
 
     func getContentHeight() -> CGFloat {
-        view.layoutIfNeeded()
-        return bottomSheet.containerView.frame.height
+        bottomSheet.containerView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height
     }
 
     @objc func dismissSelf() {
@@ -155,28 +156,30 @@ private extension BottomSheetController {
     }
 
     @objc func panGesture(_ pan: UIPanGestureRecognizer) {
+        guard !shouldPanFail(pan) else {
+            pan.setTranslation(.zero, in: view)
+            return
+        }
+
         let translation = pan.translation(in: view)
 
         switch pan.state {
-        case .began:
-            startPanGestureHeightConstant = heightConstraint.constant
-            fallthrough
-        case .changed:
+        case .began, .changed:
             dragging = true
             if translation.y > 0 {
-                heightConstraint.constant = max(startPanGestureHeightConstant - translation.y, 0)
+                heightConstraint.constant = max(getContentHeight() - translation.y, 0)
             } else {
                 // Calculating spring effect
                 let spring = log2(-translation.y / 30 + 1) * 3
-                heightConstraint.constant = max(startPanGestureHeightConstant + spring, 0)
+                heightConstraint.constant = max(getContentHeight() + spring, 0)
             }
 
             let progress = min(heightConstraint.constant / getContentHeight(), 1)
             dimmView.alpha = progress
             magnifyParent(progress: progress)
-        case .ended, .failed:
+        case .ended:
             let velocity = pan.velocity(in: view)
-            let projection = startPanGestureHeightConstant - translation.y - project(initialVelocity: velocity.y, decelerationRate: UIScrollView.DecelerationRate.fast.rawValue)
+            let projection = getContentHeight() - translation.y - project(initialVelocity: velocity.y, decelerationRate: UIScrollView.DecelerationRate.fast.rawValue)
 
             if projection < getContentHeight() / 2 {
                 dragging = false
@@ -188,6 +191,41 @@ private extension BottomSheetController {
             dragging = false
             baseAnimation(moveContainerTop)
         }
+    }
+
+    func shouldPanFail(_ pan: UIPanGestureRecognizer) -> Bool {
+        if let scrollView = bottomSheet.scrollView {
+            guard scrollView.panGestureRecognizer.state != .possible else { return false }
+
+            let scrollToTop = {
+                // Use main.async to reduce visual lag due to the offset changed by scrollView.panGestureRecognizer action
+                DispatchQueue.main.async {
+                    scrollView.setContentOffset(.init(x: 0, y: -scrollView.safeAreaInsets.top), animated: false)
+                }
+            }
+
+            if pan.velocity(in: view).y > 0 {
+                let offset = scrollView.contentOffset.y + scrollView.safeAreaInsets.top
+                if offset > 0 {
+                    return true
+                } else {
+                    if offset < -10 {
+                        pan.setTranslation(.init(x: 0, y: -offset), in: view)
+                    }
+                    scrollToTop()
+                    return false
+                }
+            } else {
+                if heightConstraint.constant < heightLimit {
+                    scrollToTop()
+                    return false
+                } else {
+                    return true
+                }
+            }
+        }
+
+        return false
     }
 
     func baseAnimation(_ animation: @escaping () -> Void) {
@@ -248,6 +286,14 @@ extension BottomSheetController: BottomSheetContainerDelegate {
     }
 }
 
+// MARK: - UIGestureRecognizerDelegate
+extension BottomSheetController: UIGestureRecognizerDelegate {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        otherGestureRecognizer == bottomSheet.scrollView?.panGestureRecognizer
+    }
+}
+
+// MARK: - UIViewControllerTransitioningDelegate
 extension BottomSheetController: UIViewControllerTransitioningDelegate {
     public func presentationController(forPresented presented: UIViewController, presenting: UIViewController?, source: UIViewController) -> UIPresentationController? {
         PresentationController(presentedViewController: presented, presenting: presenting)
@@ -259,25 +305,5 @@ extension BottomSheetController: UIViewControllerTransitioningDelegate {
 
     public func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         NullAnimator()
-    }
-}
-
-class PresentationController: UIPresentationController {
-    override var frameOfPresentedViewInContainerView: CGRect {
-        let bounds = containerView!.bounds
-        return CGRect(x: 0,
-                      y: 0,
-                      width: bounds.width,
-                      height: bounds.height)
-    }
-
-    override func presentationTransitionWillBegin() {
-        super.presentationTransitionWillBegin()
-        containerView?.addSubview(presentedView!)
-    }
-
-    override func containerViewDidLayoutSubviews() {
-        super.containerViewDidLayoutSubviews()
-        presentedView?.frame = frameOfPresentedViewInContainerView
     }
 }

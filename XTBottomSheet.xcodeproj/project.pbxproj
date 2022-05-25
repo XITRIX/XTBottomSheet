@@ -23,6 +23,7 @@
 		7C85FB14283CE306005E6824 /* ScrollController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7C85FB12283CE306005E6824 /* ScrollController.xib */; };
 		7C85FB17283D2A4F005E6824 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C85FB16283D2A4F005E6824 /* Math.swift */; };
 		7C85FB19283D3681005E6824 /* UIScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C85FB18283D3681005E6824 /* UIScreen.swift */; };
+		7CD775A5283E660300DAE271 /* PresentationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CD775A4283E660300DAE271 /* PresentationController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -44,6 +45,7 @@
 		7C85FB12283CE306005E6824 /* ScrollController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ScrollController.xib; sourceTree = "<group>"; };
 		7C85FB16283D2A4F005E6824 /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
 		7C85FB18283D3681005E6824 /* UIScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIScreen.swift; sourceTree = "<group>"; };
+		7CD775A4283E660300DAE271 /* PresentationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,6 +97,7 @@
 				7C85FB15283D2A3A005E6824 /* Extensions */,
 				7C85FB04283CBD4F005E6824 /* Container */,
 				7C85FB00283CBAC7005E6824 /* BottomSheetController.swift */,
+				7CD775A4283E660300DAE271 /* PresentationController.swift */,
 				7C85FB02283CBAEF005E6824 /* NullAnimator.swift */,
 			);
 			path = BottomSheet;
@@ -222,6 +225,7 @@
 				7C85FB03283CBAEF005E6824 /* NullAnimator.swift in Sources */,
 				7C85FB01283CBAC7005E6824 /* BottomSheetController.swift in Sources */,
 				7C85FB17283D2A4F005E6824 /* Math.swift in Sources */,
+				7CD775A5283E660300DAE271 /* PresentationController.swift in Sources */,
 				7C85FAF0283CBAA7005E6824 /* ViewController.swift in Sources */,
 				7C85FB0E283CE1E4005E6824 /* CalendarController.swift in Sources */,
 				7C85FB13283CE306005E6824 /* ScrollController.swift in Sources */,
