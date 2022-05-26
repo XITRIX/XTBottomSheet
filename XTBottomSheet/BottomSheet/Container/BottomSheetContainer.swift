@@ -9,7 +9,6 @@ import UIKit
 
 protocol BottomSheetContainerDelegate: AnyObject {
     var heightLimit: CGFloat { get }
-    func scrollViewContentSizeChanged()
 }
 
 class BottomSheetContainer: UIViewController {
@@ -76,7 +75,6 @@ class BottomSheetContainer: UIViewController {
 
         observer = scrollView.observe(\.contentSize, options: .new) { [unowned self] scrollView, size in
             updateScrollHeight()
-            delegate?.scrollViewContentSizeChanged()
         }
     }
 
@@ -89,6 +87,7 @@ class BottomSheetContainer: UIViewController {
         let safeArea = scrollView.safeAreaInsets
         let scrollSize = scrollView.contentSize.height + scrollView.contentInset.top + scrollView.contentInset.bottom + safeArea.top + safeArea.bottom
         scrollHeightConstraint?.constant = min(scrollSize, limit)
+//        view.layoutIfNeeded()
     }
 }
 

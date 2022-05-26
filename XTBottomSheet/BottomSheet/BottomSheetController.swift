@@ -67,20 +67,22 @@ class BottomSheetController: UIViewController {
         bottomSheet.view.addGestureRecognizer(pan)
 
         // Setup content size observer
-        heightObserver = bottomSheet.containerView.observe(\.bounds, options: [.old, .new], changeHandler: { [unowned self] _, _ in
-            guard !animating, !dragging else { return }
-            baseAnimation(moveContainerTop)
-        })
+//        heightObserver = bottomSheet.containerView.observe(\.bounds, options: [.old, .new], changeHandler: { [unowned self] _, _ in
+//            guard !animating, !dragging else { return }
+//            baseAnimation(moveContainerTop)
+//        })
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
         moveContainerBottom()
+        view.layoutIfNeeded()
         baseAnimation(moveContainerTop)
     }
 
     override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
+        dismissing = true
         if flag {
             animatedDismiss(completion: completion)
         } else {
@@ -91,6 +93,7 @@ class BottomSheetController: UIViewController {
 
     func animatedDismiss(fast: Bool = false, completion: (() -> Void)? = nil) {
         animating = true
+        dismissing = true
 
         let dismissalSpeed = 0.2
         if fast {
@@ -122,6 +125,16 @@ class BottomSheetController: UIViewController {
     override public var modalTransitionStyle: UIModalTransitionStyle {
         get { .crossDissolve }
         set {}
+    }
+
+    var layouting = false
+    var dismissing = false
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        if layouting || dismissing { return }
+        layouting = true
+        baseAnimation(moveContainerTop)
+        layouting = false
     }
 }
 
@@ -278,11 +291,6 @@ extension BottomSheetController: BottomSheetContainerDelegate {
     var heightLimit: CGFloat {
         let extraTopOffset = 10.0
         return view.frame.height - view.safeAreaInsets.top - extraTopOffset
-    }
-
-    func scrollViewContentSizeChanged() {
-        guard !dragging else { return }
-        baseAnimation(moveContainerTop)
     }
 }
 
