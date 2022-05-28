@@ -1,0 +1,16 @@
+PODS:
+  - XTBottomSheet (0.1.0)
+
+DEPENDENCIES:
+  - XTBottomSheet (from `../`)
+
+EXTERNAL SOURCES:
+  XTBottomSheet:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  XTBottomSheet: b86db684aad2e3558b5b1b2796aa0cf8255c717f
+
+PODFILE CHECKSUM: cc3e6ee3cca69acca90629b7b0392c30c7a14a44
+
+COCOAPODS: 1.11.2
