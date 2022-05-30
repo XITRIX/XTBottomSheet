@@ -31,9 +31,7 @@ TODO: Add long description of the pod here.
   s.ios.deployment_target = '11.0'
 
   s.source_files = 'XTBottomSheet/Classes/**/*'
-  s.resource_bundles = {
-     'XTMenu' => ['XTMenu/Classes/**/*.xib']
-  }  
+  s.resources = 'XTBottomSheet/Assets/**/*.xcassets'
   
   # s.resource_bundles = {
   #   'XTBottomSheet' => ['XTBottomSheet/Assets/*.png']
