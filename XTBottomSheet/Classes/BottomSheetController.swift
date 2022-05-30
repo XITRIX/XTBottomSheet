@@ -7,30 +7,9 @@
 
 import UIKit
 
-public extension BottomSheetController {
-    struct Config {
-        var withDragger: Bool
-        var withNavigationBar: Bool
-        var withParentMagnification: Bool
-
-        public init(withDragger: Bool = true, withNavigationBar: Bool = true, withParentMagnification: Bool = false) {
-            self.withDragger = withDragger
-            self.withNavigationBar = withNavigationBar
-            self.withParentMagnification = withParentMagnification
-        }
-    }
-}
-
 public class BottomSheetController: UIViewController {
-    let dimmView: UIView!
-    let rootViewController: UIViewController
-    let bottomSheet: BottomSheetContainer
-    let dimmMaxAlpha: CGFloat = 0.3
-    var heightConstraint: NSLayoutConstraint!
-    var dragging: Bool = false
-    var animating: Bool = false
-    var heightObserver: NSKeyValueObservation?
-    var enableMagnification = false
+    // MARK: - Public
+    var isMagnificationEnabled = false
 
     // MARK: - Init
     public init(rootViewController: UIViewController, with config: Config = .init()) {
@@ -50,39 +29,9 @@ public class BottomSheetController: UIViewController {
     override public func viewDidLoad() {
         super.viewDidLoad()
 
-        // Setup DimmView
-        dimmView.backgroundColor = UIColor(named: "DimmColor", in: Bundle(for: Self.self), compatibleWith: traitCollection)
-        view.addSubview(dimmView)
-        dimmView.frame = view.bounds
-        dimmView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        if #available(iOS 13.0, *) {
-            dimmView.layer.cornerCurve = .continuous
-        }
-
-        // Setup BottomSheetContainer
-        addChild(bottomSheet)
-        view.addSubview(bottomSheet.view)
-        bottomSheet.didMove(toParent: self)
-
-        bottomSheet.delegate = self
-
-        bottomSheet.view.translatesAutoresizingMaskIntoConstraints = false
-        heightConstraint = bottomSheet.view.heightAnchor.constraint(equalToConstant: 0)
-        NSLayoutConstraint.activate([
-            heightConstraint,
-            bottomSheet.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            bottomSheet.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            bottomSheet.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-
-        // Setup Gesture recognizers
-        dimmView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(dismissSelf)))
-        let pan = UIPanGestureRecognizer(target: self, action: #selector(panGesture(_:)))
-        if #available(iOS 13.4, *) {
-            pan.allowedScrollTypesMask = .continuous
-        }
-        pan.delegate = self
-        bottomSheet.view.addGestureRecognizer(pan)
+        setupDimm()
+        setupBottomSheetContainer()
+        setupGestures()
     }
 
     override public func viewDidAppear(_ animated: Bool) {
@@ -92,31 +41,19 @@ public class BottomSheetController: UIViewController {
         baseAnimation(moveContainerTop)
     }
 
+    override public func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate { [self] context in
+            updateLayout()
+        }
+    }
+
     override public func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
         if flag {
             animatedDismiss(completion: completion)
         } else {
             removeMagnification()
             super.dismiss(animated: flag, completion: completion)
-        }
-    }
-
-    func animatedDismiss(fast: Bool = false, completion: (() -> Void)? = nil) {
-        animating = true
-
-        let dismissalSpeed = 0.2
-        if fast {
-            UIView.animate(withDuration: dismissalSpeed, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 0.1, options: [.beginFromCurrentState]) { [self] in
-                moveContainerBottom()
-            } completion: { [self] _ in
-                dismiss(animated: false, completion: completion)
-            }
-        } else {
-            UIView.animate(withDuration: dismissalSpeed, delay: 0, options: [.beginFromCurrentState]) { [self] in
-                moveContainerBottom()
-            } completion: { [self] _ in
-                dismiss(animated: false, completion: completion)
-            }
         }
     }
 
@@ -136,10 +73,96 @@ public class BottomSheetController: UIViewController {
         set {}
     }
 
-    var layouting = false
-    var lastContentHeight: CGFloat = 0
     override public func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        updateLayout()
+    }
+
+    // MARK: - Private
+    var heightConstraint: NSLayoutConstraint!
+    var leadingConstraint: NSLayoutConstraint!
+    var trailingConstraint: NSLayoutConstraint!
+    var dragging: Bool = false
+    var animating: Bool = false
+    var heightObserver: NSKeyValueObservation?
+    var layouting = false
+    var lastContentHeight: CGFloat = 0
+
+    // MARK: - Private constants
+    let dimmView: UIView!
+    let rootViewController: UIViewController
+    let bottomSheet: BottomSheetContainer
+    let dimmMaxAlpha: CGFloat = 0.3
+    let largeScreenSideOffset: CGFloat = 124
+    let dimmColor = "DimmColor"
+}
+
+// MARK: - Private setup
+private extension BottomSheetController {
+    func setupDimm() {
+        dimmView.backgroundColor = UIColor(named: dimmColor, in: Bundle(for: Self.self), compatibleWith: traitCollection)
+        view.addSubview(dimmView)
+        dimmView.frame = view.bounds
+        dimmView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        if #available(iOS 13.0, *) {
+            dimmView.layer.cornerCurve = .continuous
+        }
+    }
+
+    func setupBottomSheetContainer() {
+        addChild(bottomSheet)
+        view.addSubview(bottomSheet.view)
+        bottomSheet.didMove(toParent: self)
+
+        bottomSheet.delegate = self
+
+        bottomSheet.view.translatesAutoresizingMaskIntoConstraints = false
+        heightConstraint = bottomSheet.view.heightAnchor.constraint(equalToConstant: 0)
+        leadingConstraint = bottomSheet.view.leadingAnchor.constraint(equalTo: view.leadingAnchor)
+        trailingConstraint = bottomSheet.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+
+        NSLayoutConstraint.activate([
+            heightConstraint,
+            leadingConstraint,
+            trailingConstraint,
+            bottomSheet.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+    }
+
+    func setupGestures() {
+        dimmView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(dismissSelf)))
+        let pan = UIPanGestureRecognizer(target: self, action: #selector(panGesture(_:)))
+        if #available(iOS 13.4, *) {
+            pan.allowedScrollTypesMask = .continuous
+        }
+        pan.delegate = self
+        bottomSheet.view.addGestureRecognizer(pan)
+    }
+}
+
+// MARK: - Private
+private extension BottomSheetController {
+    func moveContainerTop() {
+        dimmView.alpha = 1
+        heightConstraint.isActive = false
+        heightConstraint.constant = min(getContentHeight(), heightLimit)
+        heightConstraint.isActive = true
+        view.layoutIfNeeded()
+        removeMagnification()
+        magnifyParent(progress: 1)
+    }
+
+    func moveContainerBottom() {
+        dimmView.alpha = 0
+        heightConstraint.constant = 0
+        view.layoutIfNeeded()
+        magnifyParent(progress: 0)
+    }
+
+    func updateLayout() {
+        let const: CGFloat = traitCollection.horizontalSizeClass == .compact ? 0 : 128
+        leadingConstraint.constant = const
+        trailingConstraint.constant = -const
 
         let contentHeight = getContentHeight()
         guard lastContentHeight != contentHeight
@@ -152,28 +175,24 @@ public class BottomSheetController: UIViewController {
         baseAnimation(moveContainerTop)
         layouting = false
     }
-}
 
-// MARK: - Private
-private extension BottomSheetController {
-    func moveContainerTop() {
-//        guard !dragging else { return }
+    func animatedDismiss(fast: Bool = false, completion: (() -> Void)? = nil) {
+        animating = true
 
-        dimmView.alpha = 1
-        heightConstraint.isActive = false
-        heightConstraint.constant = min(getContentHeight(), heightLimit)
-        heightConstraint.isActive = true
-        view.layoutIfNeeded()
-        magnifyParent(progress: 1)
-    }
-
-    func moveContainerBottom() {
-//        guard !dragging else { return }
-
-        dimmView.alpha = 0
-        heightConstraint.constant = 0
-        view.layoutIfNeeded()
-        magnifyParent(progress: 0)
+        let dismissalSpeed = 0.2
+        if fast {
+            UIView.animate(withDuration: dismissalSpeed, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 0.1, options: [.beginFromCurrentState]) { [self] in
+                moveContainerBottom()
+            } completion: { [self] _ in
+                dismiss(animated: false, completion: completion)
+            }
+        } else {
+            UIView.animate(withDuration: dismissalSpeed, delay: 0, options: [.beginFromCurrentState]) { [self] in
+                moveContainerBottom()
+            } completion: { [self] _ in
+                dismiss(animated: false, completion: completion)
+            }
+        }
     }
 
     func getContentHeight() -> CGFloat {
@@ -206,8 +225,7 @@ private extension BottomSheetController {
             if translation.y > 0 {
                 heightConstraint.constant = max(getContentHeight() - translation.y, 0)
             } else {
-                // Calculating spring effect
-                let spring = log2(-translation.y / 30 + 1) * 3
+                let spring = Math.spring(for: translation.y)
                 heightConstraint.constant = max(getContentHeight() + spring, 0)
             }
 
@@ -216,7 +234,7 @@ private extension BottomSheetController {
             magnifyParent(progress: progress)
         case .ended:
             let velocity = pan.velocity(in: view)
-            let projection = getContentHeight() - translation.y - project(initialVelocity: velocity.y, decelerationRate: UIScrollView.DecelerationRate.fast.rawValue)
+            let projection = getContentHeight() - translation.y - Math.project(initialVelocity: velocity.y, decelerationRate: UIScrollView.DecelerationRate.fast.rawValue)
 
             if projection < getContentHeight() / 2 {
                 dragging = false
@@ -279,7 +297,7 @@ private extension BottomSheetController {
 // MARK: - Parent magnification
 private extension BottomSheetController {
     func magnifyParent(progress: CGFloat) {
-        guard enableMagnification else { return }
+        guard isMagnificationEnabled else { return }
         guard getContentHeight() >= heightLimit
         else {
             dimmView.transform = CGAffineTransform.identity
@@ -290,10 +308,10 @@ private extension BottomSheetController {
         }
 
         let magnificationRate = 0.9
-        let minimunCornerRadius = 10.0
+        let minimumCornerRadius = 10.0
 
         let size = (1 - progress) * (1 - magnificationRate) + magnificationRate
-        let radius = (UIScreen.main.displayCornerRadius - minimunCornerRadius) * (1 - progress) + minimunCornerRadius
+        let radius = (UIScreen.main.displayCornerRadius - minimumCornerRadius) * (1 - progress) + minimumCornerRadius
         let transform = CGAffineTransform(scaleX: size, y: size)
 
         dimmView.transform = transform
