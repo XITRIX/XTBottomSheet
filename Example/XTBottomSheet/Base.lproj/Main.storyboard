@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="19529" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="vXZ-lx-hvc">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="19529" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="py9-E9-QXc">
     <device id="retina5_9" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
@@ -8,7 +8,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
-        <!--View Controller-->
+        <!--Test controller-->
         <scene sceneID="ufC-wZ-h7g">
             <objects>
                 <viewController id="vXZ-lx-hvc" customClass="ViewController" customModule="XTBottomSheet_Example" customModuleProvider="target" sceneMemberID="viewController">
@@ -16,34 +16,87 @@
                         <viewControllerLayoutGuide type="top" id="jyV-Pf-zRb"/>
                         <viewControllerLayoutGuide type="bottom" id="2fi-mo-0CV"/>
                     </layoutGuides>
-                    <view key="view" contentMode="scaleToFill" id="kh9-bI-dsS">
+                    <view key="view" contentMode="scaleToFill" id="kh9-bI-dsS" customClass="CustomView" customModule="XTBottomSheet_Example" customModuleProvider="target">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="812"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="4db-G7-Ias">
-                                <rect key="frame" x="164.66666666666666" y="86" width="46" height="30"/>
+                                <rect key="frame" x="164.66666666666666" y="130" width="46" height="30"/>
                                 <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
                                 <state key="normal" title="Button"/>
                                 <connections>
                                     <action selector="showBottomSheet:" destination="vXZ-lx-hvc" eventType="touchUpInside" id="oj5-zm-cTx"/>
                                 </connections>
                             </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="dVZ-py-pGW">
+                                <rect key="frame" x="155.66666666666666" y="168" width="64" height="31"/>
+                                <color key="tintColor" systemColor="systemRedColor"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="plain" title="Modal"/>
+                                <connections>
+                                    <action selector="presentModalAction:" destination="vXZ-lx-hvc" eventType="touchUpInside" id="qZu-AE-fpP"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
                             <constraint firstItem="4db-G7-Ias" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" id="2FX-Ta-hge"/>
+                            <constraint firstItem="dVZ-py-pGW" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" id="BVG-43-n7e"/>
+                            <constraint firstItem="dVZ-py-pGW" firstAttribute="top" secondItem="4db-G7-Ias" secondAttribute="bottom" constant="8" symbolic="YES" id="WdU-C4-Dgf"/>
                             <constraint firstItem="4db-G7-Ias" firstAttribute="top" secondItem="jyV-Pf-zRb" secondAttribute="bottom" constant="42" id="zds-0z-XZw"/>
                         </constraints>
                     </view>
+                    <navigationItem key="navigationItem" title="Test controller" id="89c-Rk-auB"/>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="x5A-6p-PRh" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="22" y="131"/>
+            <point key="canvasLocation" x="1906.4000000000001" y="130.78817733990149"/>
+        </scene>
+        <!--Test controller-->
+        <scene sceneID="VtW-vX-uxc">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="q5Y-rX-rqT" sceneMemberID="viewController">
+                    <tabBarItem key="tabBarItem" title="Test controller" image="square.and.arrow.down" catalog="system" selectedImage="square.and.arrow.down.fill" id="7Wq-lG-6pb"/>
+                    <toolbarItems/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="2yC-xq-EYp">
+                        <rect key="frame" x="0.0" y="44" width="375" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="vXZ-lx-hvc" kind="relationship" relationship="rootViewController" id="Lt3-Lh-cY5"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="AGX-Vl-dtL" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="964" y="130.78817733990149"/>
+        </scene>
+        <!--Tab Bar Controller-->
+        <scene sceneID="HKJ-XU-pJC">
+            <objects>
+                <tabBarController automaticallyAdjustsScrollViewInsets="NO" id="py9-E9-QXc" sceneMemberID="viewController">
+                    <toolbarItems/>
+                    <tabBar key="tabBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="Stk-pf-Aus">
+                        <autoresizingMask key="autoresizingMask"/>
+                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    </tabBar>
+                    <connections>
+                        <segue destination="q5Y-rX-rqT" kind="relationship" relationship="viewControllers" id="eGf-rA-JTF"/>
+                    </connections>
+                </tabBarController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="q60-nt-64k" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="21.600000000000001" y="130.78817733990149"/>
         </scene>
     </scenes>
     <resources>
+        <image name="square.and.arrow.down" catalog="system" width="121" height="128"/>
+        <image name="square.and.arrow.down.fill" catalog="system" width="121" height="128"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="systemRedColor">
+            <color red="1" green="0.23137254901960785" blue="0.18823529411764706" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

@@ -8,6 +8,11 @@
 import UIKit
 
 public extension BottomSheetController {
+    enum ScrollMode {
+        case automatic
+        case scrollView(UIScrollView?)
+    }
+
     struct Config {
         var withDragger: Bool
         var withNavigationBar: Bool

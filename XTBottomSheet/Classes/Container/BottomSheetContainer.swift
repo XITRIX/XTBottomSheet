@@ -17,6 +17,7 @@ class BottomSheetContainer: UIViewController {
     @IBOutlet var navigationBar: UINavigationBar!
     @IBOutlet var blurLayer: UIView!
 
+    weak var bottomSheetDelegate: BottomSheetControllerDelegate?
     weak var delegate: BottomSheetContainerDelegate?
     let rootViewController: UIViewController
     let config: BottomSheetController.Config
@@ -25,7 +26,14 @@ class BottomSheetContainer: UIViewController {
     var scrollOffsetObserver: NSKeyValueObservation?
 
     var scrollView: UIScrollView? {
-        rootViewController.view.firstSubview(of: UIScrollView.self)
+        let scrollMode = bottomSheetDelegate?.scrollMode ?? .automatic
+
+        switch scrollMode {
+        case .automatic:
+            return rootViewController.view.firstSubview(of: UIScrollView.self)
+        case .scrollView(let scrollView):
+            return scrollView
+        }
     }
 
     var draggerHeigth: CGFloat {
@@ -39,6 +47,7 @@ class BottomSheetContainer: UIViewController {
     init(rootViewController: UIViewController, with config: BottomSheetController.Config) {
         self.config = config
         self.rootViewController = rootViewController
+        self.bottomSheetDelegate = rootViewController as? BottomSheetControllerDelegate
         super.init(nibName: nil, bundle: Bundle(for: Self.self))
     }
 

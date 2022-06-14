@@ -7,14 +7,16 @@
 
 import UIKit
 
-public class BottomSheetController: UIViewController {
-    // MARK: - Public
-    var isMagnificationEnabled = false
+public protocol BottomSheetControllerDelegate: AnyObject {
+    var scrollMode: BottomSheetController.ScrollMode { get }
+}
 
+public class BottomSheetController: UIViewController {
     // MARK: - Init
     public init(rootViewController: UIViewController, with config: Config = .init()) {
         self.dimmView = UIView()
         self.rootViewController = rootViewController
+        self.isMagnificationEnabled = config.withParentMagnification
         self.bottomSheet = BottomSheetContainer(rootViewController: rootViewController, with: config)
 
         super.init(nibName: nil, bundle: nil)
@@ -43,16 +45,24 @@ public class BottomSheetController: UIViewController {
 
     override public func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
-        coordinator.animate { [self] context in
+        coordinator.animate { [self] _ in
             updateLayout()
         }
     }
 
+    override public func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateLayout()
+    }
+
     override public func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
         if flag {
-            animatedDismiss(completion: completion)
+            animateDismiss { [self] in
+                dismiss(animated: false, completion: completion)
+            }
         } else {
             removeMagnification()
+            presentingViewController?.view.tintAdjustmentMode = .automatic
             super.dismiss(animated: flag, completion: completion)
         }
     }
@@ -73,28 +83,24 @@ public class BottomSheetController: UIViewController {
         set {}
     }
 
-    override public func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        updateLayout()
-    }
-
     // MARK: - Private
-    var heightConstraint: NSLayoutConstraint!
-    var leadingConstraint: NSLayoutConstraint!
-    var trailingConstraint: NSLayoutConstraint!
-    var dragging: Bool = false
-    var animating: Bool = false
-    var heightObserver: NSKeyValueObservation?
-    var layouting = false
-    var lastContentHeight: CGFloat = 0
+    private var heightConstraint: NSLayoutConstraint!
+    private var dragging: Bool = false
+    private var animating: Bool = false
+    private var heightObserver: NSKeyValueObservation?
+    private var layouting = false
+    private var lastContentHeight: CGFloat = 0
 
     // MARK: - Private constants
-    let dimmView: UIView!
-    let rootViewController: UIViewController
-    let bottomSheet: BottomSheetContainer
-    let dimmMaxAlpha: CGFloat = 0.3
-    let largeScreenSideOffset: CGFloat = 124
-    let dimmColor = "DimmColor"
+    private let dimmView: UIView!
+    private let rootViewController: UIViewController
+    private let bottomSheet: BottomSheetContainer
+    private let maximumWidth: CGFloat = 500
+    private let dimmColor = "DimmColor"
+    private var isMagnificationEnabled = false
+
+    // MARK: - Internal constants
+    static let dismissalSpeed = 0.2
 }
 
 // MARK: - Private setup
@@ -118,13 +124,18 @@ private extension BottomSheetController {
 
         bottomSheet.view.translatesAutoresizingMaskIntoConstraints = false
         heightConstraint = bottomSheet.view.heightAnchor.constraint(equalToConstant: 0)
-        leadingConstraint = bottomSheet.view.leadingAnchor.constraint(equalTo: view.leadingAnchor)
-        trailingConstraint = bottomSheet.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        let leadingConstraint = bottomSheet.view.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor)
+        let trailingConstraint = view.trailingAnchor.constraint(greaterThanOrEqualTo: bottomSheet.view.trailingAnchor)
+        let centerConstraint = bottomSheet.view.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        let widthAnchor = bottomSheet.view.widthAnchor.constraint(equalToConstant: maximumWidth)
+        widthAnchor.priority = .defaultHigh
 
         NSLayoutConstraint.activate([
             heightConstraint,
             leadingConstraint,
             trailingConstraint,
+            centerConstraint,
+            widthAnchor,
             bottomSheet.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
@@ -137,6 +148,27 @@ private extension BottomSheetController {
         }
         pan.delegate = self
         bottomSheet.view.addGestureRecognizer(pan)
+    }
+}
+
+// MARK: - Internal
+extension BottomSheetController {
+    func animateDismiss(fast: Bool = false, completion: (() -> Void)? = nil) {
+        animating = true
+
+        if fast {
+            UIView.animate(withDuration: BottomSheetController.dismissalSpeed, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 0.1, options: [.beginFromCurrentState]) { [self] in
+                moveContainerBottom()
+            } completion: { _ in
+                completion?()
+            }
+        } else {
+            UIView.animate(withDuration: BottomSheetController.dismissalSpeed, delay: 0, options: [.beginFromCurrentState]) { [self] in
+                moveContainerBottom()
+            } completion: { _ in
+                completion?()
+            }
+        }
     }
 }
 
@@ -160,9 +192,9 @@ private extension BottomSheetController {
     }
 
     func updateLayout() {
-        let const: CGFloat = traitCollection.horizontalSizeClass == .compact ? 0 : 128
-        leadingConstraint.constant = const
-        trailingConstraint.constant = -const
+//        let const: CGFloat = traitCollection.horizontalSizeClass == .compact ? 0 : largeScreenSideOffset
+//        leadingConstraint.constant = const
+//        trailingConstraint.constant = -const
 
         let contentHeight = getContentHeight()
         guard lastContentHeight != contentHeight
@@ -174,25 +206,6 @@ private extension BottomSheetController {
         layouting = true
         baseAnimation(moveContainerTop)
         layouting = false
-    }
-
-    func animatedDismiss(fast: Bool = false, completion: (() -> Void)? = nil) {
-        animating = true
-
-        let dismissalSpeed = 0.2
-        if fast {
-            UIView.animate(withDuration: dismissalSpeed, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 0.1, options: [.beginFromCurrentState]) { [self] in
-                moveContainerBottom()
-            } completion: { [self] _ in
-                dismiss(animated: false, completion: completion)
-            }
-        } else {
-            UIView.animate(withDuration: dismissalSpeed, delay: 0, options: [.beginFromCurrentState]) { [self] in
-                moveContainerBottom()
-            } completion: { [self] _ in
-                dismiss(animated: false, completion: completion)
-            }
-        }
     }
 
     func getContentHeight() -> CGFloat {
@@ -234,11 +247,13 @@ private extension BottomSheetController {
             magnifyParent(progress: progress)
         case .ended:
             let velocity = pan.velocity(in: view)
-            let projection = getContentHeight() - translation.y - Math.project(initialVelocity: velocity.y, decelerationRate: UIScrollView.DecelerationRate.fast.rawValue)
+            let projection = getContentHeight() - translation.y - Math.project(initialVelocity: velocity.y, decelerationRate: UIScrollView.DecelerationRate.normal.rawValue)
 
             if projection < getContentHeight() / 2 {
                 dragging = false
-                animatedDismiss(fast: true)
+                animateDismiss(fast: true) { [self] in
+                    dismiss(animated: false)
+                }
                 break
             }
             fallthrough
@@ -350,10 +365,10 @@ extension BottomSheetController: UIViewControllerTransitioningDelegate {
     }
 
     public func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        NullAnimator()
+        BottomSheetControllerAnimator(isPresenting: true, bottomSheet: self)
     }
 
     public func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        NullAnimator()
+        BottomSheetControllerAnimator(isPresenting: false, bottomSheet: self)
     }
 }
